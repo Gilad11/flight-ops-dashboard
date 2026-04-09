@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Shake animation (wrong PIN) ───────────────────────────────────────────── */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  18%  { transform: translateX(-10px); }
+  36%  { transform: translateX(10px); }
+  54%  { transform: translateX(-6px); }
+  72%  { transform: translateX(6px); }
+}
+.animate-shake { animation: shake 0.45s ease-in-out; }
+
+/* ─── Light mode overrides ───────────────────────────────────────────────────
+   Applied by adding the `is-light` class to <html>.
+   Slate neutrals flip to light. Accent colors (emerald, blue, amber, orange,
+   violet, indigo, red) are re-mapped to vibrant light-mode equivalents so
+   badges stay clear and readable on white backgrounds.
+────────────────────────────────────────────────────────────────────────────── */
+.is-light { color-scheme: light; }
+
+/* ── Structural backgrounds ── */
+.is-light .bg-slate-950 { background-color: #f0f6ff !important; }  /* soft blue-white page */
+.is-light .bg-slate-900 { background-color: #ffffff !important; }  /* white cards */
+.is-light .bg-slate-800 { background-color: #f1f5f9 !important; }  /* inputs / panels */
+.is-light .hover\:bg-slate-800:hover { background-color: #e2e8f0 !important; }
+.is-light .hover\:bg-slate-700:hover { background-color: #e2e8f0 !important; }
+
+/* ── Neutral text ── */
+.is-light .text-white    { color: #0f172a !important; }
+.is-light .text-slate-200 { color: #1e293b !important; }
+.is-light .text-slate-300 { color: #334155 !important; }
+.is-light .text-slate-400 { color: #475569 !important; }
+.is-light .text-slate-500 { color: #64748b !important; }
+.is-light .text-slate-600 { color: #94a3b8 !important; }
+.is-light .text-slate-700 { color: #cbd5e1 !important; }
+
+/* ── Neutral borders ── */
+.is-light .border-slate-800 { border-color: #e2e8f0 !important; }
+.is-light .border-slate-700 { border-color: #e2e8f0 !important; }
+.is-light .border-slate-600 { border-color: #cbd5e1 !important; }
+.is-light .focus\:border-slate-500:focus { border-color: #94a3b8 !important; }
+
+/* ── Accent text — boost contrast for light backgrounds ── */
+.is-light .text-emerald-300 { color: #047857 !important; }
+.is-light .text-emerald-400 { color: #059669 !important; }
+.is-light .text-blue-300    { color: #1d4ed8 !important; }
+.is-light .text-blue-400    { color: #2563eb !important; }
+.is-light .text-amber-300   { color: #b45309 !important; }
+.is-light .text-amber-400   { color: #d97706 !important; }
+.is-light .text-orange-300  { color: #c2410c !important; }
+.is-light .text-violet-300  { color: #6d28d9 !important; }
+.is-light .text-indigo-300  { color: #4338ca !important; }
+.is-light .text-red-300     { color: #b91c1c !important; }
+.is-light .text-red-400     { color: #dc2626 !important; }
+
+/* ── Accent badge backgrounds — replace dark/transparent with clean light tones ── */
+.is-light .bg-emerald-900\/30 { background-color: #d1fae5 !important; }  /* emerald-100 */
+.is-light .bg-emerald-900\/25 { background-color: #d1fae5 !important; }
+.is-light .bg-emerald-900\/40 { background-color: #a7f3d0 !important; }  /* emerald-200 */
+.is-light .bg-blue-900\/30    { background-color: #dbeafe !important; }  /* blue-100 */
+.is-light .bg-blue-900\/40    { background-color: #bfdbfe !important; }  /* blue-200 */
+.is-light .bg-amber-900\/30   { background-color: #fef3c7 !important; }  /* amber-100 */
+.is-light .bg-amber-500\/15   { background-color: #fef3c7 !important; }
+.is-light .bg-amber-950\/50   { background-color: #fef9c3 !important; }  /* yellow-100 */
+.is-light .bg-orange-900\/30  { background-color: #ffedd5 !important; }  /* orange-100 */
+.is-light .bg-violet-900\/30  { background-color: #ede9fe !important; }  /* violet-100 */
+.is-light .bg-indigo-900\/30  { background-color: #e0e7ff !important; }  /* indigo-100 */
+.is-light .bg-indigo-900\/40  { background-color: #c7d2fe !important; }  /* indigo-200 */
+.is-light .bg-red-900\/40     { background-color: #fee2e2 !important; }  /* red-100 */
+.is-light .bg-red-950\/50     { background-color: #fee2e2 !important; }
+
+/* ── Accent badge borders — match the lighter backgrounds ── */
+.is-light .border-emerald-700\/40 { border-color: #6ee7b7 !important; }
+.is-light .border-emerald-600\/50 { border-color: #34d399 !important; }
+.is-light .border-blue-700\/40    { border-color: #93c5fd !important; }
+.is-light .border-amber-700\/40   { border-color: #fcd34d !important; }
+.is-light .border-amber-700\/50   { border-color: #f59e0b !important; }  /* IN_AIR card border */
+.is-light .border-amber-800\/50   { border-color: #fde68a !important; }
+.is-light .border-amber-600\/40   { border-color: #fbbf24 !important; }
+.is-light .border-orange-700\/40  { border-color: #fdba74 !important; }
+.is-light .border-violet-700\/40  { border-color: #c4b5fd !important; }
+.is-light .border-indigo-700\/40  { border-color: #a5b4fc !important; }
+.is-light .border-red-700\/30     { border-color: #fca5a5 !important; }
+.is-light .border-red-800\/50     { border-color: #fca5a5 !important; }
+
+/* ── Inputs ── */
+.is-light ::placeholder { color: #94a3b8 !important; }
+.is-light input[type="datetime-local"] { color-scheme: light; }
+.is-light input:not([type="datetime-local"]),
+.is-light textarea {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Datetime input dark theme */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+.is-light input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: none;
+}

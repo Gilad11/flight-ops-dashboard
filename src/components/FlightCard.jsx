@@ -63,10 +63,20 @@ export default function FlightCard({ flight, displayTz, role, onDelete, onCleara
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-1.5 font-semibold">
                 <span className="text-xl leading-none">{originCfg.flag}</span>
-                <span className={`text-sm ${originCfg.text}`}>{flight.origin}</span>
+                <div className="flex flex-col leading-tight">
+                  <span className={`text-sm ${originCfg.text}`}>{flight.origin}</span>
+                  {flight.origin_airport && (
+                    <span className="font-mono text-xs text-slate-500">{flight.origin_airport}</span>
+                  )}
+                </div>
                 <span className="text-slate-600 mx-0.5">→</span>
                 <span className="text-xl leading-none">{destCfg.flag}</span>
-                <span className={`text-sm ${destCfg.text}`}>{flight.destination}</span>
+                <div className="flex flex-col leading-tight">
+                  <span className={`text-sm ${destCfg.text}`}>{flight.destination}</span>
+                  {flight.destination_airport && (
+                    <span className="font-mono text-xs text-slate-500">{flight.destination_airport}</span>
+                  )}
+                </div>
               </div>
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${sc.badge}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />

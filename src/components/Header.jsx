@@ -2,13 +2,21 @@ import { useState, useEffect } from 'react'
 import { getCurrentTimeInTZ, getCurrentDateInTZ, TIMEZONES } from '../utils/timeUtils'
 
 export default function Header({ displayTz, setDisplayTz, theme, setTheme, role, onLogout }) {
-  const [times, setTimes] = useState({ uae: '', israel: '' })
-  const [dates, setDates] = useState({ uae: '', israel: '' })
+  const [times, setTimes] = useState({ uae: '', israel: '', zulu: '' })
+  const [dates, setDates] = useState({ uae: '', israel: '', zulu: '' })
 
   useEffect(() => {
     const tick = () => {
-      setTimes({ uae: getCurrentTimeInTZ(TIMEZONES.UAE), israel: getCurrentTimeInTZ(TIMEZONES.ISRAEL) })
-      setDates({ uae: getCurrentDateInTZ(TIMEZONES.UAE),  israel: getCurrentDateInTZ(TIMEZONES.ISRAEL) })
+      setTimes({
+        uae:    getCurrentTimeInTZ(TIMEZONES.UAE),
+        israel: getCurrentTimeInTZ(TIMEZONES.ISRAEL),
+        zulu:   getCurrentTimeInTZ('UTC'),
+      })
+      setDates({
+        uae:    getCurrentDateInTZ(TIMEZONES.UAE),
+        israel: getCurrentDateInTZ(TIMEZONES.ISRAEL),
+        zulu:   getCurrentDateInTZ('UTC'),
+      })
     }
     tick()
     const id = setInterval(tick, 1000)
@@ -34,15 +42,16 @@ export default function Header({ displayTz, setDisplayTz, theme, setTheme, role,
           </div>
 
           {/* Center: clocks — desktop only */}
-          <div className="hidden sm:flex items-center gap-5">
+          <div className="hidden sm:flex items-center gap-4">
             <FullClock flag="🇦🇪" time={times.uae}    date={dates.uae}    colorClass="text-emerald-400" />
             <div className="w-px h-7 bg-slate-700" />
             <FullClock flag="🇮🇱" time={times.israel} date={dates.israel} colorClass="text-blue-400" />
+            <div className="w-px h-7 bg-slate-700" />
+            <FullClock flag="Z"   time={times.zulu}   date={dates.zulu}   colorClass="text-violet-400" zulu />
           </div>
 
           {/* Right: icon controls */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            {/* Theme toggle */}
             <button
               onClick={() => setTheme(isLight ? 'dark' : 'light')}
               title={isLight ? 'Switch to dark mode' : 'Switch to light mode'}
@@ -51,13 +60,11 @@ export default function Header({ displayTz, setDisplayTz, theme, setTheme, role,
               {isLight ? '🌙' : '☀️'}
             </button>
 
-            {/* TZ toggle — desktop only (mobile goes in row 2) */}
             <div className="hidden sm:flex items-center bg-slate-800 rounded-lg p-1 gap-0.5">
               <TzBtn active={displayTz === 'UAE'}    onClick={() => setDisplayTz('UAE')}    label="🇦🇪 UAE" activeClass="bg-emerald-700 text-white" />
               <TzBtn active={displayTz === 'ISRAEL'} onClick={() => setDisplayTz('ISRAEL')} label="🇮🇱 ISR" activeClass="bg-blue-700 text-white" />
             </div>
 
-            {/* Lock */}
             <button
               onClick={onLogout}
               title="Lock / switch user"
@@ -74,6 +81,8 @@ export default function Header({ displayTz, setDisplayTz, theme, setTheme, role,
             <MiniClock flag="🇦🇪" time={times.uae}    colorClass="text-emerald-400" />
             <div className="w-px h-4 bg-slate-700" />
             <MiniClock flag="🇮🇱" time={times.israel} colorClass="text-blue-400" />
+            <div className="w-px h-4 bg-slate-700" />
+            <MiniClock flag="Z"   time={times.zulu}   colorClass="text-violet-400" />
           </div>
           <div className="flex items-center bg-slate-800 rounded-lg p-0.5 gap-0.5">
             <TzBtn active={displayTz === 'UAE'}    onClick={() => setDisplayTz('UAE')}    label="🇦🇪 UAE" activeClass="bg-emerald-700 text-white" compact />
@@ -88,24 +97,26 @@ export default function Header({ displayTz, setDisplayTz, theme, setTheme, role,
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function FullClock({ flag, time, date, colorClass }) {
+function FullClock({ flag, time, date, colorClass, zulu }) {
   return (
     <div className="text-center leading-tight">
       <div className="flex items-center gap-1.5">
-        <span className="text-base">{flag}</span>
+        {zulu
+          ? <span className={`font-bold text-base leading-none ${colorClass}`}>Z</span>
+          : <span className="text-base">{flag}</span>
+        }
         <span className={`font-mono font-bold text-base tabular-nums ${colorClass}`}>{time || '--:--:--'}</span>
       </div>
-      <div className="text-slate-600 text-xs mt-0.5">{date}</div>
+      <div className="text-slate-600 text-xs mt-0.5">{zulu ? 'UTC/Zulu' : date}</div>
     </div>
   )
 }
 
 function MiniClock({ flag, time, colorClass }) {
-  // Show HH:MM only on mobile (no seconds, saves space)
   const display = time ? time.slice(0, 5) : '--:--'
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-sm">{flag}</span>
+    <div className="flex items-center gap-1">
+      <span className={`text-xs font-bold ${colorClass}`}>{flag}</span>
       <span className={`font-mono font-bold text-sm tabular-nums ${colorClass}`}>{display}</span>
     </div>
   )

@@ -15,6 +15,8 @@ const COLUMNS = [
   'id',
   'origin',
   'destination',
+  'origin_airport',       // ICAO code — e.g. OMAA, OMAL, LLBG
+  'destination_airport',  // ICAO code — e.g. LLNV, OMDB
   'flight_type',
   'aircraft_type',
   'payload_type',
@@ -124,20 +126,22 @@ function createFlight(data) {
 
   const row = [
     id,
-    data.origin          || '',
-    data.destination     || '',
+    data.origin               || '',
+    data.destination          || '',
+    data.origin_airport       || '',
+    data.destination_airport  || '',
     flightType,
-    data.aircraft_type   || '',
-    data.payload_type    || 'CARGO',
-    data.notes           || '',
-    data.route           || 'SAUDI',
+    data.aircraft_type        || '',
+    data.payload_type         || 'CARGO',
+    data.notes                || '',
+    data.route                || 'SELERY',
     depTime.toISOString(),
     arrTime.toISOString(),
     isReturn ? 'true' : 'false',
-    data.unload_time     || '1h',
+    data.unload_time          || '1h',
     returnDepISO,
     returnArrISO,
-    data.passenger_list_link || '',
+    data.passenger_list_link  || '',
     tzOrigin,
     tzDest,
     now,
@@ -312,6 +316,12 @@ function _applySheetStructure(sheet) {
   sheet.getRange(2, col('origin'),      999, 1).setDataValidation(locationRule);
   sheet.getRange(2, col('destination'), 999, 1).setDataValidation(locationRule);
   sheet.getRange(2, col('flight_type'), 999, 1).setDataValidation(locationRule);
+
+  // airport codes — dropdown
+  const uaeAirportRule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(['OMAA', 'OMDB', 'OMAL', 'OMAD', 'LLBG', 'LLNV'], true).build();
+  sheet.getRange(2, col('origin_airport'),      999, 1).setDataValidation(uaeAirportRule);
+  sheet.getRange(2, col('destination_airport'), 999, 1).setDataValidation(uaeAirportRule);
 
   // payload_type — dropdown
   const payloadRule = SpreadsheetApp.newDataValidation()

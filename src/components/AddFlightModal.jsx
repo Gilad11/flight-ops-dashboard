@@ -2,8 +2,25 @@ import { useState } from 'react'
 import { addFlight } from '../api/sheets'
 import { localToUTC, TIMEZONES } from '../utils/timeUtils'
 
+// ─── Airport data ─────────────────────────────────────────────────────────────
+
+const AIRPORTS = {
+  UAE: [
+    { code: 'OMAA', name: 'Abu Dhabi Intl' },
+    { code: 'OMDB', name: 'Dubai Intl' },
+    { code: 'OMAL', name: 'Al Ain Intl' },
+    { code: 'OMAD', name: 'Al Bateen Exec' },
+  ],
+  ISRAEL: [
+    { code: 'LLBG', name: 'Ben Gurion' },
+    { code: 'LLNV', name: 'Nevatim AB' },
+  ],
+}
+
 const INITIAL = {
   origin: '',
+  origin_airport: '',
+  destination_airport: '',
   aircraft_type: '',
   payload_type: 'CARGO',
   route: 'SELERY',
@@ -20,10 +37,19 @@ export default function AddFlightModal({ onClose, onAdd }) {
   const [error, setError] = useState('')
 
   const destination = form.origin === 'UAE' ? 'ISRAEL' : form.origin === 'ISRAEL' ? 'UAE' : ''
+  const originAirports = form.origin ? AIRPORTS[form.origin] : []
+  const destAirports   = destination ? AIRPORTS[destination] : []
 
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }))
 
-  // Compute preview times for user feedback
+  // Reset airports when origin changes
+  const setOrigin = (val) => setForm(prev => ({
+    ...prev,
+    origin: val,
+    origin_airport: '',
+    destination_airport: '',
+  }))
+
   const durationH = form.route === 'CYPRUS' ? 6 : 5
   const arrivalPreview = (() => {
     if (!form.departure_time_local || !form.origin) return null
@@ -42,7 +68,9 @@ export default function AddFlightModal({ onClose, onAdd }) {
 
   const handleSubmit = async e => {
     e.preventDefault()
-    if (!form.origin) { setError('Please select an origin.'); return }
+    if (!form.origin)               { setError('Please select an origin.'); return }
+    if (!form.origin_airport)       { setError('Please select a departure airport.'); return }
+    if (!form.destination_airport)  { setError('Please select an arrival airport.'); return }
     if (!form.departure_time_local) { setError('Please enter a departure time.'); return }
 
     setLoading(true)
@@ -52,6 +80,8 @@ export default function AddFlightModal({ onClose, onAdd }) {
       const payload = {
         origin: form.origin,
         destination,
+        origin_airport: form.origin_airport,
+        destination_airport: form.destination_airport,
         aircraft_type: form.aircraft_type.trim(),
         payload_type: form.payload_type,
         route: form.route,
@@ -90,33 +120,63 @@ export default function AddFlightModal({ onClose, onAdd }) {
 
         <form onSubmit={handleSubmit} className="px-5 py-5 space-y-5">
 
-          {/* ── Step 1: Origin ── */}
+          {/* ── Origin country ── */}
           <Section label="Origin">
             <div className="grid grid-cols-2 gap-3">
               <OriginBtn
                 active={form.origin === 'UAE'}
-                onClick={() => set('origin', 'UAE')}
+                onClick={() => setOrigin('UAE')}
                 flag="🇦🇪" label="UAE"
                 activeClass="bg-emerald-800 border-emerald-500 text-white"
                 hoverClass="hover:border-emerald-700"
               />
               <OriginBtn
                 active={form.origin === 'ISRAEL'}
-                onClick={() => set('origin', 'ISRAEL')}
+                onClick={() => setOrigin('ISRAEL')}
                 flag="🇮🇱" label="Israel"
                 activeClass="bg-blue-800 border-blue-500 text-white"
                 hoverClass="hover:border-blue-700"
               />
             </div>
-            {destination && (
-              <p className="text-slate-500 text-xs mt-2">
-                Destination auto-set →{' '}
-                <span className="text-slate-300 font-medium">
-                  {destination === 'UAE' ? '🇦🇪 UAE' : '🇮🇱 Israel'}
-                </span>
-              </p>
-            )}
           </Section>
+
+          {/* ── Departure airport ── */}
+          {form.origin && (
+            <Section label="Departure Airport">
+              <div className="grid grid-cols-2 gap-2">
+                {originAirports.map(ap => (
+                  <AirportBtn
+                    key={ap.code}
+                    code={ap.code}
+                    name={ap.name}
+                    active={form.origin_airport === ap.code}
+                    onClick={() => set('origin_airport', ap.code)}
+                  />
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {/* ── Arrival airport ── */}
+          {destination && (
+            <Section label={
+              <>Arrival Airport <span className="text-slate-600 font-normal normal-case text-xs">
+                ({destination === 'UAE' ? '🇦🇪 UAE' : '🇮🇱 Israel'})
+              </span></>
+            }>
+              <div className="grid grid-cols-2 gap-2">
+                {destAirports.map(ap => (
+                  <AirportBtn
+                    key={ap.code}
+                    code={ap.code}
+                    name={ap.name}
+                    active={form.destination_airport === ap.code}
+                    onClick={() => set('destination_airport', ap.code)}
+                  />
+                ))}
+              </div>
+            </Section>
+          )}
 
           {/* ── Aircraft type ── */}
           <Section label="Aircraft Type">
@@ -175,7 +235,6 @@ export default function AddFlightModal({ onClose, onAdd }) {
               <span className="text-slate-400 text-sm">Enable return leg</span>
               <Toggle on={form.return_flight} onClick={() => set('return_flight', !form.return_flight)} />
             </div>
-
             {form.return_flight && (
               <div className="mt-3 pt-3 border-t border-slate-800">
                 <p className="text-slate-500 text-xs mb-2 uppercase tracking-wider font-semibold">Unload time at destination</p>
@@ -209,14 +268,12 @@ export default function AddFlightModal({ onClose, onAdd }) {
             />
           </Section>
 
-          {/* Error */}
           {error && (
             <p className="text-red-400 text-sm bg-red-950/50 border border-red-800/50 rounded-lg px-3 py-2.5">
               ⚠️ {error}
             </p>
           )}
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
@@ -241,6 +298,23 @@ function Section({ label, children }) {
       </label>
       {children}
     </div>
+  )
+}
+
+function AirportBtn({ code, name, active, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-col items-start px-3 py-2 rounded-xl border text-left transition-all ${
+        active
+          ? 'bg-slate-700 border-slate-400 text-white'
+          : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+      }`}
+    >
+      <span className="font-mono font-bold text-sm">{code}</span>
+      <span className="text-xs opacity-60 truncate w-full">{name}</span>
+    </button>
   )
 }
 

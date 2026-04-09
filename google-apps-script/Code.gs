@@ -15,8 +15,6 @@ const COLUMNS = [
   'id',
   'origin',
   'destination',
-  'origin_airport',       // ICAO code — e.g. OMAA, OMAL, LLBG
-  'destination_airport',  // ICAO code — e.g. LLNV, OMDB
   'flight_type',
   'aircraft_type',
   'payload_type',
@@ -32,7 +30,9 @@ const COLUMNS = [
   'timezone_origin',
   'timezone_destination',
   'created_at',
-  'clearance',   // 'true' | 'false' — landing clearance approved
+  'clearance',            // 'true' | 'false'
+  'origin_airport',       // ICAO — e.g. OMAA, OMAL, LLBG
+  'destination_airport',  // ICAO — e.g. LLNV, OMDB
 ];
 
 // ─── HTTP handlers ────────────────────────────────────────────────────────────
@@ -124,28 +124,29 @@ function createFlight(data) {
   const tzOrigin    = (data.origin === 'UAE') ? 'Asia/Dubai' : 'Asia/Jerusalem';
   const tzDest      = (data.destination === 'UAE') ? 'Asia/Dubai' : 'Asia/Jerusalem';
 
+  // IMPORTANT: row order must match COLUMNS array exactly
   const row = [
-    id,
-    data.origin               || '',
-    data.destination          || '',
-    data.origin_airport       || '',
-    data.destination_airport  || '',
-    flightType,
-    data.aircraft_type        || '',
-    data.payload_type         || 'CARGO',
-    data.notes                || '',
-    data.route                || 'SELERY',
-    depTime.toISOString(),
-    arrTime.toISOString(),
-    isReturn ? 'true' : 'false',
-    data.unload_time          || '1h',
-    returnDepISO,
-    returnArrISO,
-    data.passenger_list_link  || '',
-    tzOrigin,
-    tzDest,
-    now,
-    'false',  // clearance — starts as not cleared
+    id,                                    // 0:  id
+    data.origin               || '',       // 1:  origin
+    data.destination          || '',       // 2:  destination
+    flightType,                            // 3:  flight_type
+    data.aircraft_type        || '',       // 4:  aircraft_type
+    data.payload_type         || 'CARGO',  // 5:  payload_type
+    data.notes                || '',       // 6:  notes
+    data.route                || 'SELERY', // 7:  route
+    depTime.toISOString(),                 // 8:  departure_time_utc
+    arrTime.toISOString(),                 // 9:  arrival_time_utc
+    isReturn ? 'true' : 'false',           // 10: return_flight
+    data.unload_time          || '1h',     // 11: unload_time
+    returnDepISO,                          // 12: return_departure_utc
+    returnArrISO,                          // 13: return_arrival_utc
+    data.passenger_list_link  || '',       // 14: passenger_list_link
+    tzOrigin,                              // 15: timezone_origin
+    tzDest,                                // 16: timezone_destination
+    now,                                   // 17: created_at
+    'false',                               // 18: clearance — starts as not cleared
+    data.origin_airport       || '',       // 19: origin_airport
+    data.destination_airport  || '',       // 20: destination_airport
   ];
 
   sheet.appendRow(row);
@@ -233,6 +234,106 @@ function getOrCreateSheet() {
     _applySheetStructure(sheet);
   }
   return sheet;
+}
+
+/**
+ * Run this ONCE to insert the two new airport columns into an existing sheet
+ * without losing any data. After running, run initSheet() to reformat headers.
+ */
+function migrateAddAirportColumns() {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) { SpreadsheetApp.getUi().alert('❌ Sheet "Flights" not found.'); return; }
+
+  const headerRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+  // Check if already migrated
+  if (headerRow.includes('origin_airport')) {
+    SpreadsheetApp.getUi().alert('✅ Already up to date — airport columns exist.');
+    return;
+  }
+
+  // Find the column index of 'destination' (1-based)
+  const destIdx = headerRow.indexOf('destination') + 1; // 1-based
+  if (destIdx === 0) { SpreadsheetApp.getUi().alert('❌ Could not find "destination" column.'); return; }
+
+  // Insert 2 blank columns after 'destination'
+  sheet.insertColumnsAfter(destIdx, 2);
+
+  // Write the new headers
+  sheet.getRange(1, destIdx + 1).setValue('origin_airport');
+  sheet.getRange(1, destIdx + 2).setValue('destination_airport');
+
+  // Re-apply full structure (formatting, validation, etc.)
+  _applySheetStructure(sheet);
+
+  SpreadsheetApp.getUi().alert('✅ Migration complete!\n\nTwo new columns added:\n• origin_airport (col ' + (destIdx+1) + ')\n• destination_airport (col ' + (destIdx+2) + ')\n\nExisting flight data is preserved.');
+}
+
+/**
+ * Run this ONCE to fix airport columns that were incorrectly inserted at
+ * positions 4-5 (after 'destination') by the old migration.
+ * Moves them to the end (after 'clearance') to match the COLUMNS array.
+ * After running: redeploy the web app as a new version.
+ */
+function fixAirportColumns() {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) { SpreadsheetApp.getUi().alert('❌ Sheet "Flights" not found.'); return; }
+
+  const headerRow  = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const totalCols  = headerRow.length;
+
+  const originIdx = headerRow.indexOf('origin_airport');
+  const destIdx   = headerRow.indexOf('destination_airport');
+
+  if (originIdx === -1 || destIdx === -1) {
+    SpreadsheetApp.getUi().alert('❌ Airport columns not found in sheet.');
+    return;
+  }
+
+  // Already in correct position (last two columns)?
+  if (originIdx === totalCols - 2 && destIdx === totalCols - 1) {
+    SpreadsheetApp.getUi().alert('✅ Airport columns already in the correct position.');
+    _applySheetStructure(sheet);
+    return;
+  }
+
+  const lastRow = sheet.getLastRow();
+
+  if (lastRow > 1) {
+    // Read all data rows
+    const data = sheet.getRange(2, 1, lastRow - 1, totalCols).getValues();
+
+    // Extract airport values from their current (wrong) positions
+    const originVals = data.map(row => [row[originIdx]]);
+    const destVals   = data.map(row => [row[destIdx]]);
+
+    // Delete the higher-index column first, then the lower (avoids shift errors)
+    const hi = Math.max(originIdx, destIdx) + 1; // 1-based
+    const lo = Math.min(originIdx, destIdx) + 1;
+    sheet.deleteColumn(hi);
+    sheet.deleteColumn(lo);
+
+    // Append two new columns at the end
+    const endCol = sheet.getLastColumn();
+    sheet.getRange(1, endCol + 1).setValue('origin_airport');
+    sheet.getRange(1, endCol + 2).setValue('destination_airport');
+    sheet.getRange(2, endCol + 1, lastRow - 1, 1).setValues(originVals);
+    sheet.getRange(2, endCol + 2, lastRow - 1, 1).setValues(destVals);
+  } else {
+    // No data — just fix the headers
+    const hi = Math.max(originIdx, destIdx) + 1;
+    const lo = Math.min(originIdx, destIdx) + 1;
+    sheet.deleteColumn(hi);
+    sheet.deleteColumn(lo);
+    const endCol = sheet.getLastColumn();
+    sheet.getRange(1, endCol + 1).setValue('origin_airport');
+    sheet.getRange(1, endCol + 2).setValue('destination_airport');
+  }
+
+  _applySheetStructure(sheet);
+  SpreadsheetApp.getUi().alert('✅ Airport columns moved to end!\nNow redeploy the web app as a new version.');
 }
 
 /**

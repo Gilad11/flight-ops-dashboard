@@ -63,20 +63,10 @@ export default function FlightCard({ flight, displayTz, role, onDelete, onCleara
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-1.5 font-semibold">
                 <span className="text-xl leading-none">{originCfg.flag}</span>
-                <div className="flex flex-col leading-tight">
-                  <span className={`text-sm ${originCfg.text}`}>{flight.origin}</span>
-                  {flight.origin_airport && (
-                    <span className="font-mono text-xs text-slate-500">{flight.origin_airport}</span>
-                  )}
-                </div>
+                <span className={`text-sm ${originCfg.text}`}>{flight.origin}</span>
                 <span className="text-slate-600 mx-0.5">→</span>
                 <span className="text-xl leading-none">{destCfg.flag}</span>
-                <div className="flex flex-col leading-tight">
-                  <span className={`text-sm ${destCfg.text}`}>{flight.destination}</span>
-                  {flight.destination_airport && (
-                    <span className="font-mono text-xs text-slate-500">{flight.destination_airport}</span>
-                  )}
-                </div>
+                <span className={`text-sm ${destCfg.text}`}>{flight.destination}</span>
               </div>
               <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${sc.badge}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
@@ -86,6 +76,27 @@ export default function FlightCard({ flight, displayTz, role, onDelete, onCleara
                 <span className="text-xs text-amber-400 font-medium">⏱ Departs in {soonHint}</span>
               )}
             </div>
+
+            {/* Airport codes row */}
+            {(flight.origin_airport || flight.destination_airport) && (
+              <div className="flex items-center gap-1.5">
+                <span className={`font-mono font-bold text-sm px-2 py-0.5 rounded-md border ${
+                  flight.origin === 'UAE'
+                    ? 'bg-emerald-900/25 border-emerald-700/40 text-emerald-300'
+                    : 'bg-blue-900/25 border-blue-700/40 text-blue-300'
+                }`}>
+                  {flight.origin_airport || '????'}
+                </span>
+                <span className="text-slate-600 text-xs">✈</span>
+                <span className={`font-mono font-bold text-sm px-2 py-0.5 rounded-md border ${
+                  flight.destination === 'UAE'
+                    ? 'bg-emerald-900/25 border-emerald-700/40 text-emerald-300'
+                    : 'bg-blue-900/25 border-blue-700/40 text-blue-300'
+                }`}>
+                  {flight.destination_airport || '????'}
+                </span>
+              </div>
+            )}
 
             {/* Aircraft / payload / route */}
             <div className="flex items-center gap-2 flex-wrap">
